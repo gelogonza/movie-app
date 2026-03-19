@@ -1,6 +1,6 @@
 // Sends a POST request to the backend and returns the parsed movie recommendations array.
 async function fetchRecommendations(mood, genreId) {
-  var response = await fetch('http://localhost:3000/recommend', {
+  var response = await fetch('https://movie-app-u4m66.ondigitalocean.app/', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ mood: mood, genreId: Number(genreId) })
