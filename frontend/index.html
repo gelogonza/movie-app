@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MovieRecs</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@100..900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/cards.css">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <span class="logo">MovieRecs</span>
+        </nav>
+
+    <section id="mood-section" class="screen active">
+        <h1> Whats your current vibe?</h1>
+        <div class="mood-grid">
+            <button class="mood-card" data-mood="happy">Happy</button>
+            <button class="mood-card" data-mood="sad">Sad</button>
+            <button class="mood-card" data-mood="excited">Excited</button>
+            <button class="mood-card" data-mood="anxious">Anxious</button>
+            <button class="mood-card" data-mood="romantic">Romantic</button>
+            <button class="mood-card" data-mood="bored">Bored</button>
+        </div>
+    </section>
+
+    <section id="genre-section" class="screen">
+        <h1>Pick a genre</h1>
+        <p id="mood-summary">Recommendations based on your mood</p>
+        <div class="genre-grid">
+            <button class="genre-pill" data-genre-id="28">Action</button>
+            <button class="genre-pill" data-genre-id="35">Comedy</button>
+            <button class="genre-pill" data-genre-id="18">Drama</button>
+            <button class="genre-pill" data-genre-id="27">Horror</button>
+            <button class="genre-pill" data-genre-id="10749">Romance</button>
+            <button class="genre-pill" data-genre-id="878">Sci-Fi</button>
+            <button class="genre-pill" data-genre-id="14">Fantasy</button>
+            <button class="genre-pill" data-genre-id="16">Animation</button>
+            <button class="genre-pill" data-genre-id="99">Documentary</button>
+            <button class="genre-pill" data-genre-id="80">Crime</button>
+            <button class="genre-pill" data-genre-id="53">Thriller</button>
+            <button class="genre-pill" data-genre-id="10752">War</button>
+        </div>
+        <button id="back-to-mood">Back</button>
+    </section>
+
+    <section id="results-section" class="screen">
+        <h1>Your Movie Recommendations</h1><p id="results-summary"></p> <!-- e.g. "Happy + Comedy" -->
+        <div id="loading-spinner" class="hidden">Finding your movies...</div>
+        <div id="movie-grid" class="movie-grid">
+          <!-- Movie cards injected here by app.js -->
+        </div>
+        <button id="start-over">Start over</button>
+      </section>
+    
+      <script src="js/api.js"></script>
+      <script src="js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,210 @@
+/* global styles */
+body {
+    font-family: 'Outfit', sans-serif;
+    background: linear-gradient(to bottom, #070B34, #141852, #2B2F77, #483475, #6B4984, #855988);
+    min-height: 100vh;
+    font-size: 16px;
+    color: white;
+    margin: 6rem;
+}
+
+h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 3rem;
+    color: #E8EAF0;
+    text-align: center;
+    margin-bottom: 20px;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.4);
+}
+
+p{
+    font-size: 18px;
+    color: white;
+    text-align: center;
+    margin: 2rem;
+    font-family: 'Outfit', sans-serif;
+
+}
+
+.navbar {
+    background: rgba(21, 23, 61, 0.85);
+    padding: 1rem;
+    position: fixed;
+    text-align: center;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+.logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 2rem;
+    color: #E8EAF0;
+    margin-bottom: 20px;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.4);
+}
+
+.screen {
+    display: none;
+    text-align: center;
+    margin-top: 10rem;
+}
+
+.screen.active {
+    display: block;
+}
+
+.hidden {
+    display: none;
+}
+
+.mood-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+}
+
+.mood-card {
+    background: transparent;
+    border: none;
+    padding: 1rem;
+    font-size: 1.5rem;
+    color: #ffffff;
+    cursor: pointer;
+    border-radius: 3rem;
+    border: 2px solid #ffffff;
+}
+
+.mood-card:hover {
+    background: #ffffff;
+    color: #070b34;
+}
+
+.mood-card:active {
+    background: #ffffff;
+    color: #070b34;
+}
+
+.mood-card:focus {
+    outline: none;
+}
+
+.genre-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+}   
+
+.genre-pill {
+    background: transparent;
+    border: none;
+    padding: 1rem;
+    font-size: 1.5rem;
+    color: white;
+    cursor: pointer;
+    border-radius: 3rem;
+    border: 2px solid #ffffff;
+}
+
+.genre-pill:hover {
+    background: #ffffff;
+    color: #070b34;
+}
+
+.genre-pill:active {
+    background: #ffffff;
+    color: #070b34;
+}
+
+.genre-pill:focus {
+    outline: none;
+}
+
+.movie-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+}
+
+#back-to-mood {
+    background: transparent;
+    border: none;
+    padding: 1rem;
+    font-size: 1.5rem;
+    color: white;
+    cursor: pointer;
+    border-radius: 3rem;
+    border: 2px solid #ffffff;
+    margin-top: 5rem;
+}
+
+#back-to-mood:hover {
+    background: #ffffff;
+    color: #070b34;
+}
+
+#back-to-mood:active {
+    background: #B8B8B8;
+}
+
+#back-to-mood:focus {
+    outline: none;
+}
+
+#start-over {
+    background: transparent;
+    color: white;
+    border: none;
+    padding: 1rem;
+    font-size: 1.5rem;
+    cursor: pointer;
+    border-radius: 3rem;
+    border: 2px solid #ffffff;
+    margin-top: 4rem;
+}
+
+#start-over:hover {
+    background: #ffffff;
+    color: #070b34;
+}
+
+#start-over:active {
+    background: #ffffff;
+    color: #070b34;
+}
+
+#start-over:focus {
+    outline: none;
+}
+
+/* mobile responsiveness */
+@media (max-width: 768px) {
+    body {
+        margin: 5rem 1.5rem 2rem;
+    }
+
+    h1 {
+        font-size: 2.2rem;
+    }
+
+    .mood-grid,
+    .genre-grid,
+    .movie-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .mood-card,
+    .genre-pill {
+        font-size: 1.2rem;
+        padding: 0.85rem;
+    }
+
+    #back-to-mood,
+    #start-over {
+        width: 100%;
+        font-size: 1.2rem;
+    }
+}

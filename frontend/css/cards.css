@@ -1,0 +1,52 @@
+.movie-card {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 1rem;
+    overflow: hidden;
+    text-align: left;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.movie-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+.movie-poster {
+    width: 100%;
+    aspect-ratio: 2 / 3;
+    object-fit: cover;
+    display: block;
+}
+
+.movie-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.4rem;
+    color: #E8EAF0;
+    padding: 0.75rem 1rem 0.25rem;
+}
+
+.movie-rating {
+    font-size: 0.9rem;
+    color: #c5a3ff;
+    padding: 0 1rem;
+    font-weight: 600;
+}
+
+.movie-year {
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.6);
+    padding: 0.25rem 1rem 0;
+}
+
+.movie-overview {
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.75);
+    padding: 0.5rem 1rem 1rem;
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-line-clamp: 4;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    margin: 0;
+}
