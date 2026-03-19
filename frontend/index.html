@@ -9,11 +9,23 @@
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@100..900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/cards.css">
     <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/watchlist.css">
 </head>
 <body>
     <nav class="navbar">
         <span class="logo">MovieRecs</span>
+        <button id="watchlist-toggle">Watchlist<span class="watchlist-count hidden"></span></button>
         </nav>
+
+    <div id="watchlist-panel" class="watchlist-panel">
+      <div class="watchlist-header">
+        <h2>Watchlist</h2>
+        <button id="watchlist-close">Close</button>
+      </div>
+      <p id="watchlist-empty-msg">No movies saved yet.</p>
+      <div id="watchlist-grid"></div>
+    </div>
+    <div id="watchlist-overlay" class="watchlist-overlay"></div>
 
     <section id="mood-section" class="screen active">
         <h1> Whats your current vibe?</h1>
