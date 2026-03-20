@@ -558,6 +558,39 @@ function populateModal(movie) {
   }
 }
 
+// Fetches a fresh set of recommendations for the current mood and genre
+async function shuffleResults() {
+  if (selectedMood === null || selectedGenreId === null) return;
+  var spinner = document.getElementById('loading-spinner');
+  spinner.classList.remove('hidden');
+  var grid = document.getElementById('movie-grid');
+  grid.innerHTML = '';
+  var watchedIds = getWatchedList().map(function (m) { return m.id; });
+  try {
+    var response = await window.fetchRecommendations(selectedMood, selectedGenreId, watchedIds);
+    renderMovies(response.results);
+    spinner.classList.add('hidden');
+    var warning = document.getElementById('watched-pool-warning');
+    if (response.poolSizeAfterExclusion < 15) {
+      if (!warning) {
+        warning = document.createElement('div');
+        warning.id = 'watched-pool-warning';
+        warning.className = 'watched-pool-warning';
+        document.getElementById('results-section').insertBefore(warning, document.getElementById('shuffle-btn'));
+      }
+      warning.textContent = 'You have seen most of our picks for this combination. Try a different genre for more variety.';
+    } else if (warning) {
+      warning.textContent = '';
+    }
+  } catch (err) {
+    spinner.classList.add('hidden');
+    var errorCard = document.createElement('div');
+    errorCard.className = 'movie-card';
+    errorCard.textContent = 'Something went wrong. Please try again.';
+    grid.appendChild(errorCard);
+  }
+}
+
 // Toggles the mobile burger menu dropdown open or closed.
 function toggleBurgerMenu(forceClose) {
   var burger = document.getElementById('nav-burger');
@@ -602,9 +635,23 @@ document.addEventListener('DOMContentLoaded', function () {
 
       try {
         var watchedIds = getWatchedList().map(function (m) { return m.id; });
-        var movies = await window.fetchRecommendations(selectedMood, selectedGenreId, watchedIds);
-        renderMovies(movies);
+        var response = await window.fetchRecommendations(selectedMood, selectedGenreId, watchedIds);
+        var results = response.results;
+        var poolSizeAfterExclusion = response.poolSizeAfterExclusion;
+        renderMovies(results);
         spinner.classList.add('hidden');
+        var warning = document.getElementById('watched-pool-warning');
+        if (poolSizeAfterExclusion < 15) {
+          if (!warning) {
+            warning = document.createElement('div');
+            warning.id = 'watched-pool-warning';
+            warning.className = 'watched-pool-warning';
+            document.getElementById('results-section').insertBefore(warning, document.getElementById('shuffle-btn'));
+          }
+          warning.textContent = 'You have seen most of our picks for this combination. Try a different genre for more variety.';
+        } else if (warning) {
+          warning.textContent = '';
+        }
       } catch (err) {
         spinner.classList.add('hidden');
         grid.innerHTML = '';
@@ -620,6 +667,8 @@ document.addEventListener('DOMContentLoaded', function () {
   document.getElementById('back-to-mood').addEventListener('click', function () {
     selectedMood = null;
     selectedGenreId = null;
+    var warning = document.getElementById('watched-pool-warning');
+    if (warning) warning.textContent = '';
     showScreen('mood-section');
   });
 
@@ -627,7 +676,13 @@ document.addEventListener('DOMContentLoaded', function () {
   document.getElementById('start-over').addEventListener('click', function () {
     selectedMood = null;
     selectedGenreId = null;
+    var warning = document.getElementById('watched-pool-warning');
+    if (warning) warning.textContent = '';
     showScreen('mood-section');
+  });
+
+  document.getElementById('shuffle-btn').addEventListener('click', function () {
+    shuffleResults();
   });
 
   document.getElementById('watchlist-toggle').addEventListener('click', function () {

@@ -150,7 +150,10 @@ router.post('/', async (req, res) => {
     // setCache(cacheKey, results);
     // console.log(`[CACHE SET] ${cacheKey} -- ${results.length} movies`);
 
-    return res.json(results);
+    // Number of movies remaining after excluding already-watched IDs
+    var poolSizeAfterExclusion = afterExclusion.length;
+
+    return res.json({ results: results, poolSizeAfterExclusion: poolSizeAfterExclusion });
   } catch (err) {
     console.error('Error in /recommend:', err.message);
 

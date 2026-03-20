@@ -1,4 +1,4 @@
-// Sends a POST request to the backend and returns the parsed movie recommendations array.
+// Sends a POST request to the backend and returns { results, poolSizeAfterExclusion }.
 async function fetchRecommendations(mood, genreId, excludeIds) {
   var ids = Array.isArray(excludeIds) ? excludeIds : [];
   var response = await fetch('https://movie-app-u4m66.ondigitalocean.app/recommend', {

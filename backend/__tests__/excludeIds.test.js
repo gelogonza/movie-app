@@ -91,7 +91,7 @@ describe('POST /recommend -- excludeIds validation', function () {
       .send({ mood: 'happy', genreId: 28, excludeIds: [1, 2] });
 
     expect(res.status).toBe(200);
-    expect(Array.isArray(res.body)).toBe(true);
+    expect(Array.isArray(res.body.results)).toBe(true);
   });
 
   test('accepts request when excludeIds is omitted', async function () {
@@ -102,7 +102,7 @@ describe('POST /recommend -- excludeIds validation', function () {
       .send({ mood: 'happy', genreId: 28 });
 
     expect(res.status).toBe(200);
-    expect(Array.isArray(res.body)).toBe(true);
+    expect(Array.isArray(res.body.results)).toBe(true);
   });
 
   test('accepts an empty excludeIds array', async function () {
@@ -113,7 +113,7 @@ describe('POST /recommend -- excludeIds validation', function () {
       .send({ mood: 'happy', genreId: 28, excludeIds: [] });
 
     expect(res.status).toBe(200);
-    expect(Array.isArray(res.body)).toBe(true);
+    expect(Array.isArray(res.body.results)).toBe(true);
   });
 });
 
@@ -127,7 +127,7 @@ describe('POST /recommend -- excludeIds filtering', function () {
       .send({ mood: 'happy', genreId: 28, excludeIds: excluded });
 
     expect(res.status).toBe(200);
-    var returnedIds = res.body.map(function (m) { return m.id; });
+    var returnedIds = res.body.results.map(function (m) { return m.id; });
     for (var i = 0; i < excluded.length; i++) {
       expect(returnedIds).not.toContain(excluded[i]);
     }
@@ -141,7 +141,7 @@ describe('POST /recommend -- excludeIds filtering', function () {
       .send({ mood: 'happy', genreId: 28, excludeIds: [9999, 8888] });
 
     expect(res.status).toBe(200);
-    expect(res.body.length).toBeGreaterThan(0);
+    expect(res.body.results.length).toBeGreaterThan(0);
   });
 
   test('excluding all movies produces an empty result', async function () {
@@ -165,7 +165,7 @@ describe('POST /recommend -- excludeIds filtering', function () {
       .send({ mood: 'happy', genreId: 28, excludeIds: [1, 2, 3] });
 
     expect(res.status).toBe(200);
-    expect(res.body).toEqual([]);
+    expect(res.body.results).toEqual([]);
   });
 
   test('mood validation error takes priority over excludeIds', async function () {

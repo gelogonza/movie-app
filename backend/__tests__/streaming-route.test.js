@@ -56,8 +56,8 @@ describe('POST /recommend -- streaming provider enrichment', function () {
       .send({ mood: 'happy', genreId: 28 });
 
     expect(res.status).toBe(200);
-    expect(res.body.length).toBeGreaterThan(0);
-    res.body.forEach(function (movie) {
+    expect(res.body.results.length).toBeGreaterThan(0);
+    res.body.results.forEach(function (movie) {
       expect(movie).toHaveProperty('streamingProviders');
       expect(Array.isArray(movie.streamingProviders)).toBe(true);
     });
@@ -75,7 +75,7 @@ describe('POST /recommend -- streaming provider enrichment', function () {
       .send({ mood: 'happy', genreId: 28 });
 
     expect(res.status).toBe(200);
-    res.body.forEach(function (movie) {
+    res.body.results.forEach(function (movie) {
       expect(movie.streamingProviders).toEqual(fakeProviders);
     });
   });
@@ -89,7 +89,7 @@ describe('POST /recommend -- streaming provider enrichment', function () {
       .send({ mood: 'happy', genreId: 28 });
 
     expect(res.status).toBe(200);
-    res.body.forEach(function (movie) {
+    res.body.results.forEach(function (movie) {
       expect(movie.streamingProviders).toEqual([]);
     });
   });
