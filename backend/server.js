@@ -6,6 +6,7 @@ const dotenv = require('dotenv');
 dotenv.config();
 
 const recommendRouter = require('./routes/recommend');
+const movieRouter = require('./routes/movie');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -20,6 +21,7 @@ app.use((req, res, next) => {
 });
 
 app.use('/recommend', recommendRouter);
+app.use('/movie', movieRouter);
 
 // Returns a simple health check response to verify the server is running.
 app.get('/health', (req, res) => {

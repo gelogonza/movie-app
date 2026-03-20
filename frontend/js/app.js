@@ -162,6 +162,13 @@ function renderMovies(movies) {
     })(movie);
     card.appendChild(watchedBtn);
 
+    card.style.cursor = 'pointer';
+    (function (m) {
+      card.addEventListener('click', function () {
+        openMovieModal(m.id);
+      });
+    })(movie);
+
     grid.appendChild(card);
   }
 }
@@ -420,6 +427,137 @@ function renderWatchedPanel() {
   }
 }
 
+// Fetches movie details from the backend and opens the detail modal.
+function openMovieModal(movieId) {
+  var overlay = document.getElementById('movie-modal-overlay');
+  overlay.classList.add('active');
+  document.getElementById('modal-title').textContent = 'Loading...';
+  document.getElementById('modal-tagline').textContent = '';
+  document.getElementById('modal-rating').textContent = '';
+  document.getElementById('modal-year').textContent = '';
+  document.getElementById('modal-runtime').textContent = '';
+  document.getElementById('modal-runtime').classList.remove('hidden');
+  document.getElementById('modal-genres').innerHTML = '';
+  document.getElementById('modal-overview').textContent = '';
+  document.getElementById('modal-backdrop').style.backgroundImage = '';
+  document.getElementById('modal-backdrop').style.height = '';
+  document.getElementById('modal-director').textContent = '';
+  document.getElementById('modal-cast').innerHTML = '';
+  document.getElementById('modal-trailer').innerHTML = '';
+
+  fetch('https://movie-app-u4m66.ondigitalocean.app/movie/' + movieId)
+    .then(function (response) {
+      if (!response.ok) {
+        document.getElementById('modal-title').textContent = 'Something went wrong';
+        return;
+      }
+      return response.json();
+    })
+    .then(function (data) {
+      if (data) {
+        populateModal(data);
+      }
+    })
+    .catch(function () {
+      document.getElementById('modal-title').textContent = 'Something went wrong';
+    });
+}
+
+// Closes the movie detail modal and stops any playing trailer.
+function closeMovieModal() {
+  document.getElementById('movie-modal-overlay').classList.remove('active');
+  document.getElementById('modal-trailer').innerHTML = '';
+}
+
+// Fills the movie detail modal with data from the backend response.
+function populateModal(movie) {
+  document.getElementById('modal-title').textContent = movie.title;
+  document.getElementById('modal-tagline').textContent =
+    (movie.tagline && movie.tagline.length > 0) ? movie.tagline : '';
+  document.getElementById('modal-rating').textContent =
+    'Rating: ' + movie.vote_average.toFixed(1);
+  document.getElementById('modal-year').textContent =
+    movie.release_date ? movie.release_date.slice(0, 4) : 'Unknown';
+
+  var runtimeEl = document.getElementById('modal-runtime');
+  if (movie.runtime) {
+    runtimeEl.textContent = movie.runtime;
+    runtimeEl.classList.remove('hidden');
+  } else {
+    runtimeEl.textContent = '';
+    runtimeEl.classList.add('hidden');
+  }
+
+  document.getElementById('modal-overview').textContent =
+    (movie.overview && movie.overview.length > 0) ? movie.overview : 'No description available.';
+
+  var backdropEl = document.getElementById('modal-backdrop');
+  if (movie.backdrop_url) {
+    backdropEl.style.backgroundImage = 'url(' + movie.backdrop_url + ')';
+    backdropEl.style.height = '';
+  } else {
+    backdropEl.style.backgroundImage = '';
+    backdropEl.style.height = '0';
+  }
+
+  var genresEl = document.getElementById('modal-genres');
+  genresEl.innerHTML = '';
+  if (movie.genres) {
+    for (var g = 0; g < movie.genres.length; g++) {
+      var pill = document.createElement('span');
+      pill.className = 'modal-genre-pill';
+      pill.textContent = movie.genres[g].name;
+      genresEl.appendChild(pill);
+    }
+  }
+
+  var directorEl = document.getElementById('modal-director');
+  while (directorEl.firstChild) { directorEl.removeChild(directorEl.firstChild); }
+  var dirLabel = document.createElement('span');
+  dirLabel.className = 'modal-director-label';
+  dirLabel.textContent = 'Director: ';
+  directorEl.appendChild(dirLabel);
+  directorEl.appendChild(document.createTextNode(movie.director ? movie.director : 'Unknown'));
+
+  var castEl = document.getElementById('modal-cast');
+  castEl.innerHTML = '';
+  if (movie.cast) {
+    for (var c = 0; c < movie.cast.length; c++) {
+      var member = movie.cast[c];
+      var memberDiv = document.createElement('div');
+      memberDiv.className = 'modal-cast-member';
+
+      var photo = document.createElement('img');
+      photo.className = 'modal-cast-photo';
+      photo.src = member.profile_url ? member.profile_url : 'https://via.placeholder.com/56x56?text=N/A';
+      photo.alt = member.name;
+      memberDiv.appendChild(photo);
+
+      var nameSpan = document.createElement('span');
+      nameSpan.className = 'modal-cast-name';
+      nameSpan.textContent = member.name;
+      memberDiv.appendChild(nameSpan);
+
+      var charSpan = document.createElement('span');
+      charSpan.className = 'modal-cast-character';
+      charSpan.textContent = member.character;
+      memberDiv.appendChild(charSpan);
+
+      castEl.appendChild(memberDiv);
+    }
+  }
+
+  var trailerEl = document.getElementById('modal-trailer');
+  trailerEl.innerHTML = '';
+  if (movie.trailer_key) {
+    var iframe = document.createElement('iframe');
+    iframe.src = 'https://www.youtube.com/embed/' + movie.trailer_key + '?rel=0';
+    iframe.setAttribute('allow', 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture');
+    iframe.allowFullscreen = true;
+    trailerEl.appendChild(iframe);
+  }
+}
+
 // Wires up all click listeners and shows the initial screen on page load.
 document.addEventListener('DOMContentLoaded', function () {
   var moodButtons = document.querySelectorAll('.mood-card');
@@ -500,8 +638,21 @@ document.addEventListener('DOMContentLoaded', function () {
     toggleWatchedPanel(true);
   });
 
+  document.getElementById('modal-close').addEventListener('click', function () {
+    closeMovieModal();
+  });
+
+  document.getElementById('movie-modal-overlay').addEventListener('click', function (e) {
+    if (e.target === document.getElementById('movie-modal-overlay')) {
+      closeMovieModal();
+    }
+  });
+
   document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape') {
+      if (document.getElementById('movie-modal-overlay').classList.contains('active')) {
+        closeMovieModal();
+      }
       if (document.getElementById('watchlist-panel').classList.contains('open')) {
         toggleWatchlistPanel(true);
       }
