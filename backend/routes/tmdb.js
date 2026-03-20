@@ -55,4 +55,24 @@ function formatMovie(movie) {
   };
 }
 
-module.exports = { discoverMovies, formatMovie };
+// Fetches US flatrate streaming providers for a single movie, returning an empty array on failure.
+async function getWatchProviders(movieId) {
+  try {
+    const response = await axios.get(`${TMDB_BASE_URL}/movie/${movieId}/watch/providers`, {
+      params: { api_key: process.env.TMDB_API_KEY },
+    });
+    const flatrate = response.data && response.data.results && response.data.results.US && response.data.results.US.flatrate;
+    if (!Array.isArray(flatrate)) return [];
+    return flatrate.map(function (p) {
+      return {
+        provider_id: p.provider_id,
+        provider_name: p.provider_name,
+        logo_url: 'https://image.tmdb.org/t/p/w92' + p.logo_path,
+      };
+    });
+  } catch (err) {
+    return [];
+  }
+}
+
+module.exports = { discoverMovies, formatMovie, getWatchProviders };

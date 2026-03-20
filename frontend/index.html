@@ -10,11 +10,33 @@
     <link rel="stylesheet" href="css/cards.css">
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/watchlist.css">
+    <link rel="stylesheet" href="css/watched.css">
+    <style>
+      .streaming-providers {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0 1rem 0.75rem;
+        flex-wrap: wrap;
+      }
+      .streaming-label {
+        font-size: 0.75rem;
+        color: rgba(255, 255, 255, 0.6);
+        margin-right: 0.25rem;
+      }
+      .streaming-logo {
+        width: 28px;
+        height: 28px;
+        border-radius: 6px;
+        object-fit: cover;
+      }
+    </style>
 </head>
 <body>
     <nav class="navbar">
         <span class="logo">MovieRecs</span>
         <button id="watchlist-toggle">Watchlist<span class="watchlist-count hidden"></span></button>
+        <button id="watched-toggle">Watched<span class="watched-count hidden"></span></button>
         </nav>
 
     <div id="watchlist-panel" class="watchlist-panel">
@@ -26,6 +48,16 @@
       <div id="watchlist-grid"></div>
     </div>
     <div id="watchlist-overlay" class="watchlist-overlay"></div>
+
+    <div id="watched-panel" class="watched-panel">
+      <div class="watched-header">
+        <h2>Watched</h2>
+        <button id="watched-close">Close</button>
+      </div>
+      <p id="watched-empty-msg">No movies marked as watched yet.</p>
+      <div id="watched-grid"></div>
+    </div>
+    <div id="watched-overlay" class="watched-overlay"></div>
 
     <section id="mood-section" class="screen active">
         <h1> Whats your current vibe?</h1>

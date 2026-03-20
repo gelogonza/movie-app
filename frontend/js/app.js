@@ -22,6 +22,26 @@ function isInWatchlist(movieId) {
   return false;
 }
 
+// Returns the saved watched-history array from localStorage, or an empty array if absent.
+function getWatchedList() {
+  try { return JSON.parse(localStorage.getItem('moviemood_watched')) || []; }
+  catch (e) { return []; }
+}
+
+// Writes the given watched-history array to localStorage as JSON.
+function saveWatchedList(list) {
+  localStorage.setItem('moviemood_watched', JSON.stringify(list));
+}
+
+// Returns true if a movie with the given id exists in the watched-history array.
+function isWatched(movieId) {
+  var list = getWatchedList();
+  for (var i = 0; i < list.length; i++) {
+    if (list[i].id === movieId) return true;
+  }
+  return false;
+}
+
 // Hides all screen sections and shows only the one matching the given sectionId.
 function showScreen(sectionId) {
   var screens = document.querySelectorAll('.screen');
@@ -89,6 +109,27 @@ function renderMovies(movies) {
       : 'No description available.';
     card.appendChild(overviewP);
 
+    if (movie.streamingProviders && movie.streamingProviders.length > 0) {
+      var streamingDiv = document.createElement('div');
+      streamingDiv.className = 'streaming-providers';
+      var streamLabel = document.createElement('span');
+      streamLabel.className = 'streaming-label';
+      streamLabel.textContent = 'Stream on:';
+      streamingDiv.appendChild(streamLabel);
+      for (var s = 0; s < movie.streamingProviders.length; s++) {
+        var provider = movie.streamingProviders[s];
+        var logo = document.createElement('img');
+        logo.className = 'streaming-logo';
+        logo.src = provider.logo_url;
+        logo.alt = provider.provider_name;
+        logo.title = provider.provider_name;
+        logo.setAttribute('width', '28');
+        logo.setAttribute('height', '28');
+        streamingDiv.appendChild(logo);
+      }
+      card.appendChild(streamingDiv);
+    }
+
     var bookmarkBtn = document.createElement('button');
     bookmarkBtn.className = 'bookmark-btn';
     if (isInWatchlist(movie.id)) {
@@ -104,6 +145,22 @@ function renderMovies(movies) {
       });
     })(movie);
     card.appendChild(bookmarkBtn);
+
+    var watchedBtn = document.createElement('button');
+    watchedBtn.className = 'watched-btn';
+    if (isWatched(movie.id)) {
+      watchedBtn.textContent = 'Watched';
+      watchedBtn.classList.add('watched-btn--active');
+    } else {
+      watchedBtn.textContent = 'Mark as watched';
+    }
+    (function (m) {
+      watchedBtn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        handleWatched(m);
+      });
+    })(movie);
+    card.appendChild(watchedBtn);
 
     grid.appendChild(card);
   }
@@ -236,6 +293,133 @@ function renderWatchlist() {
   }
 }
 
+// Adds or removes a movie from the watched history and updates all related UI.
+function handleWatched(movie) {
+  var list = getWatchedList();
+  if (isWatched(movie.id)) {
+    if (!window.confirm('Remove this movie from your watched history?')) return;
+    list = list.filter(function (m) { return m.id !== movie.id; });
+    saveWatchedList(list);
+  } else {
+    list.push(movie);
+    saveWatchedList(list);
+  }
+  updateWatchedButtons();
+  updateWatchedCount();
+  if (document.getElementById('watched-panel').classList.contains('open')) {
+    renderWatchedPanel();
+  }
+}
+
+// Syncs every watched button in the movie grid with the current watched-history state.
+function updateWatchedButtons() {
+  var buttons = document.querySelectorAll('#movie-grid .watched-btn');
+  for (var i = 0; i < buttons.length; i++) {
+    var card = buttons[i].parentElement;
+    var movieId = Number(card.getAttribute('data-movie-id'));
+    if (isWatched(movieId)) {
+      buttons[i].textContent = 'Watched';
+      buttons[i].classList.add('watched-btn--active');
+    } else {
+      buttons[i].textContent = 'Mark as watched';
+      buttons[i].classList.remove('watched-btn--active');
+    }
+  }
+}
+
+// Updates the watched count badge in the navbar toggle button.
+function updateWatchedCount() {
+  var count = getWatchedList().length;
+  var badge = document.querySelector('#watched-toggle .watched-count');
+  if (!badge) return;
+  if (count > 0) {
+    badge.textContent = count;
+    badge.classList.remove('hidden');
+  } else {
+    badge.classList.add('hidden');
+  }
+}
+
+// Opens or closes the watched-history slide-out panel and its backdrop overlay.
+function toggleWatchedPanel(forceClose) {
+  var panel = document.getElementById('watched-panel');
+  var overlay = document.getElementById('watched-overlay');
+  if (forceClose) {
+    panel.classList.remove('open');
+    overlay.classList.remove('active');
+    return;
+  }
+  var willOpen = !panel.classList.contains('open');
+  panel.classList.toggle('open');
+  overlay.classList.toggle('active');
+  if (willOpen) {
+    renderWatchedPanel();
+    document.getElementById('watched-close').focus();
+  }
+}
+
+// Renders the watched-history movies into the watched panel grid.
+function renderWatchedPanel() {
+  var list = getWatchedList();
+  var grid = document.getElementById('watched-grid');
+  var emptyMsg = document.getElementById('watched-empty-msg');
+  while (grid.firstChild) { grid.removeChild(grid.firstChild); }
+
+  if (list.length === 0) {
+    emptyMsg.style.display = '';
+    return;
+  }
+  emptyMsg.style.display = 'none';
+
+  for (var i = 0; i < list.length; i++) {
+    (function (movie) {
+      var card = document.createElement('div');
+      card.className = 'watched-card';
+
+      var img = document.createElement('img');
+      img.className = 'watched-poster';
+      img.src = movie.poster_path ? movie.poster_path : 'https://via.placeholder.com/60x90?text=N/A';
+      img.alt = movie.title;
+      card.appendChild(img);
+
+      var info = document.createElement('div');
+      info.className = 'watched-card-info';
+
+      var title = document.createElement('div');
+      title.className = 'watched-title';
+      title.textContent = movie.title;
+      info.appendChild(title);
+
+      var rating = document.createElement('div');
+      rating.className = 'watched-rating';
+      rating.textContent = 'Rating: ' + movie.vote_average.toFixed(1);
+      info.appendChild(rating);
+
+      var year = document.createElement('div');
+      year.className = 'watched-year';
+      year.textContent = movie.release_date ? 'Released: ' + movie.release_date.slice(0, 4) : 'Released: Unknown';
+      info.appendChild(year);
+
+      card.appendChild(info);
+
+      var removeBtn = document.createElement('button');
+      removeBtn.className = 'watched-remove-btn';
+      removeBtn.textContent = 'Remove';
+      removeBtn.addEventListener('click', function () {
+        if (!window.confirm('Remove this movie from your watched history?')) return;
+        var updated = getWatchedList().filter(function (m) { return m.id !== movie.id; });
+        saveWatchedList(updated);
+        renderWatchedPanel();
+        updateWatchedButtons();
+        updateWatchedCount();
+      });
+      card.appendChild(removeBtn);
+
+      grid.appendChild(card);
+    })(list[i]);
+  }
+}
+
 // Wires up all click listeners and shows the initial screen on page load.
 document.addEventListener('DOMContentLoaded', function () {
   var moodButtons = document.querySelectorAll('.mood-card');
@@ -263,7 +447,8 @@ document.addEventListener('DOMContentLoaded', function () {
       grid.innerHTML = '';
 
       try {
-        var movies = await window.fetchRecommendations(selectedMood, selectedGenreId);
+        var watchedIds = getWatchedList().map(function (m) { return m.id; });
+        var movies = await window.fetchRecommendations(selectedMood, selectedGenreId, watchedIds);
         renderMovies(movies);
         spinner.classList.add('hidden');
       } catch (err) {
@@ -303,12 +488,30 @@ document.addEventListener('DOMContentLoaded', function () {
     toggleWatchlistPanel(true);
   });
 
+  document.getElementById('watched-toggle').addEventListener('click', function () {
+    toggleWatchedPanel();
+  });
+
+  document.getElementById('watched-close').addEventListener('click', function () {
+    toggleWatchedPanel(true);
+  });
+
+  document.getElementById('watched-overlay').addEventListener('click', function () {
+    toggleWatchedPanel(true);
+  });
+
   document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape' && document.getElementById('watchlist-panel').classList.contains('open')) {
-      toggleWatchlistPanel(true);
+    if (e.key === 'Escape') {
+      if (document.getElementById('watchlist-panel').classList.contains('open')) {
+        toggleWatchlistPanel(true);
+      }
+      if (document.getElementById('watched-panel').classList.contains('open')) {
+        toggleWatchedPanel(true);
+      }
     }
   });
 
   updateWatchlistCount();
+  updateWatchedCount();
   showScreen('mood-section');
 });

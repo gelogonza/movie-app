@@ -1,5 +1,5 @@
 const express = require('express');
-const { discoverMovies, formatMovie } = require('./tmdb');
+const { discoverMovies, formatMovie, getWatchProviders } = require('./tmdb');
 
 const router = express.Router();
 
@@ -89,7 +89,7 @@ function rankAndFilter(movies) {
 // Handles POST /recommend -- validates input, checks cache, calls TMDB, ranks results.
 router.post('/', async (req, res) => {
   try {
-    const { mood, genreId } = req.body;
+    const { mood, genreId, excludeIds } = req.body;
 
     if (!mood || typeof mood !== 'string') {
       return res.status(400).json({ error: 'Missing or invalid mood value' });
@@ -98,6 +98,12 @@ router.post('/', async (req, res) => {
     if (genreId === undefined || genreId === null || typeof genreId !== 'number') {
       return res.status(400).json({ error: 'Missing or invalid genreId value' });
     }
+
+    if (excludeIds !== undefined && !Array.isArray(excludeIds)) {
+      return res.status(400).json({ error: 'excludeIds must be an array' });
+    }
+
+    const idsToExclude = Array.isArray(excludeIds) ? excludeIds : [];
 
     const moodKey = mood.toLowerCase();
     const moodFilter = MOOD_FILTERS[moodKey];
@@ -123,7 +129,21 @@ router.post('/', async (req, res) => {
 
     const rawMovies = await discoverMovies(filters);
     const formatted = rawMovies.map(formatMovie);
-    const results = rankAndFilter(formatted);
+    // Remove movies the user has already watched so they get fresh results
+    const afterExclusion = formatted.filter(function (m) { return idsToExclude.indexOf(m.id) === -1; });
+    const results = rankAndFilter(afterExclusion);
+
+    // Fetch streaming provider data for all results in parallel
+    try {
+      const providerResults = await Promise.all(results.map(function (m) { return getWatchProviders(m.id); }));
+      for (let i = 0; i < results.length; i++) {
+        results[i].streamingProviders = providerResults[i];
+      }
+    } catch (err) {
+      for (let i = 0; i < results.length; i++) {
+        results[i].streamingProviders = [];
+      }
+    }
 
     // Cache write disabled -- results are randomised per request so caching
     // would lock in a single shuffled set for the TTL duration.
