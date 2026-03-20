@@ -1,5 +1,7 @@
 # MovieRecs
 
+Live demo: [https://movie-app-movierecs.vercel.app](https://movie-app-movierecs.vercel.app)
+
 A mood-based movie recommendation web app. You pick how you are feeling, pick a genre, and get a personalised list of 10 movies to watch — no account, no sign-up, no algorithm tracking you.
 
 ---
@@ -12,6 +14,12 @@ MovieRecs walks you through two choices:
 2. **Genre** — what kind of film you are in the mood for (Action, Comedy, Drama, Horror, Romance, Sci-Fi, Fantasy, Animation, Documentary, Crime, Thriller, War)
 
 Once both are selected, the app queries the TMDB movie database using filters tuned to your mood, scores the results using a custom ranking formula, shuffles the top picks so you get something different each time, and displays up to 10 movie cards with poster, title, rating, year, and overview.
+
+Beyond the core recommendation flow, the app includes three additional features:
+
+- **Watchlist** — users can save any movie from the results grid by clicking a Save button on the card. Saved movies appear in a slide-out panel accessible from the navbar. The watchlist persists between browser sessions using localStorage.
+- **Watched history** — users can mark any movie as watched. Watched movies are stored in localStorage and sent to the backend with every new recommendation request. The backend filters them out before ranking so the user always receives results they have not seen before.
+- **Streaming availability** — each movie card shows which US streaming services the movie is currently available on as subscription streaming. Service logos are fetched from the TMDB watch providers endpoint and displayed below the movie overview.
 
 ---
 
@@ -72,6 +80,10 @@ The 70/30 split balances critical quality with audience reach. The logarithmic s
 
 After sorting by score, the top 25 results are taken and shuffled using a Fisher-Yates shuffle. The first 10 from the shuffled pool are returned. This means every request for the same mood and genre combination will return a high-quality but varied set — repeating the same selection will show you different films.
 
+**Step 5 — Watched movie exclusion**
+
+The frontend sends an optional `excludeIds` array in the request body containing the numeric IDs of all movies the user has previously marked as watched. Before `rankAndFilter` runs, any movie whose ID appears in `excludeIds` is removed from the pool. This ensures the ranked and shuffled results only contain movies the user has not already seen.
+
 ---
 
 ## Project structure
@@ -85,16 +97,18 @@ movie-app/
 │   │   └── server.test.js      # Tests for Express routes and middleware
 │   ├── routes/
 │   │   ├── recommend.js        # POST /recommend handler and ranking logic
-│   │   └── tmdb.js             # TMDB API calls and movie formatting
+│   │   └── tmdb.js             # TMDB API calls, movie formatting, and getWatchProviders
 │   ├── .env                    # Environment variables (not committed)
 │   ├── package.json
 │   └── server.js               # Express app entry point
 ├── frontend/
 │   ├── css/
 │   │   ├── cards.css           # Movie card styles
-│   │   └── style.css           # Global layout and button styles
+│   │   ├── style.css           # Global layout and button styles
+│   │   ├── watchlist.css       # Slide-out watchlist panel styles
+│   │   └── watched.css         # Slide-out watched history panel styles
 │   ├── js/
-│   │   ├── api.js              # Fetch wrapper for POST /recommend
+│   │   ├── api.js              # Fetch wrapper for POST /recommend (accepts excludeIds)
 │   │   └── app.js              # UI logic and DOM manipulation
 │   └── index.html              # Single-page app shell
 ├── .gitignore
@@ -126,13 +140,7 @@ npm install
 
 ### 3. Set up environment variables
 
-Create a `.env` file inside the `backend` directory:
-
-```bash
-touch backend/.env
-```
-
-Add the following, replacing the placeholder with your actual TMDB API key:
+Create a file named `.env` inside the `backend` directory. Add the following, replacing the placeholder with your actual TMDB API key:
 
 ```
 TMDB_API_KEY=your_tmdb_api_key_here
@@ -195,3 +203,4 @@ The `.env` file must be placed inside the `backend/` directory. It is excluded f
 | Movie data | TMDB API (v3 `/discover/movie`) |
 | HTTP client | Axios |
 | Testing | Jest, Supertest |
+| Deployment | DigitalOcean App Platform (backend), Vercel (frontend) |
