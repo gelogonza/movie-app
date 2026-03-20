@@ -211,6 +211,74 @@ p{
     display: inline-block;
 }
 
+.decade-filter {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.decade-btn {
+    background: transparent;
+    border: 2px solid #ffffff;
+    color: white;
+    border-radius: 3rem;
+    padding: 0.5rem 1rem;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background 150ms ease, color 150ms ease;
+}
+
+.decade-btn:hover {
+    background: #ffffff;
+    color: #070b34;
+}
+
+.decade-btn--active {
+    background: white;
+    color: #070b34;
+}
+
+#copy-link-btn {
+    background: transparent;
+    color: white;
+    border: none;
+    padding: 1rem;
+    font-size: 1.5rem;
+    cursor: pointer;
+    border-radius: 3rem;
+    border: 2px solid #ffffff;
+    margin-bottom: 0.5rem;
+    display: none;
+}
+
+#copy-link-btn:hover {
+    background: #ffffff;
+    color: #070b34;
+}
+
+#copy-link-btn:active {
+    background: #ffffff;
+    color: #070b34;
+}
+
+#copy-link-btn:focus {
+    outline: none;
+}
+
+#results-section.active #copy-link-btn {
+    display: inline-block;
+}
+
+#decade-filter {
+    display: none;
+}
+
+#results-section.active #decade-filter {
+    display: flex;
+}
+
 .watched-pool-warning {
     font-size: 0.9rem;
     color: rgba(197, 163, 255, 0.9);

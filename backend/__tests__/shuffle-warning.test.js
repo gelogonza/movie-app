@@ -25,8 +25,18 @@ document.body.innerHTML =
   '</section>' +
   '<section id="results-section" class="screen">' +
     '<p id="results-summary"></p>' +
+    '<button id="copy-link-btn">Copy link</button>' +
     '<div id="watched-pool-warning" class="watched-pool-warning"></div>' +
     '<button id="shuffle-btn">Shuffle</button>' +
+    '<div id="decade-filter" class="decade-filter">' +
+      '<button class="decade-btn" data-decade="pre1970s">Pre 1970s</button>' +
+      '<button class="decade-btn" data-decade="1970s">1970s</button>' +
+      '<button class="decade-btn" data-decade="1980s">1980s</button>' +
+      '<button class="decade-btn" data-decade="1990s">1990s</button>' +
+      '<button class="decade-btn" data-decade="2000s">2000s</button>' +
+      '<button class="decade-btn" data-decade="2010s">2010s</button>' +
+      '<button class="decade-btn" data-decade="2020s">2020s</button>' +
+    '</div>' +
     '<div id="loading-spinner" class="hidden">Finding your movies...</div>' +
     '<div id="movie-grid" class="movie-grid"></div>' +
     '<button id="start-over">Start over</button>' +
@@ -144,7 +154,7 @@ describe('shuffleResults', function () {
 
     await shuffleResults();
 
-    expect(window.fetchRecommendations).toHaveBeenCalledWith('sad', 35, [10, 20]);
+    expect(window.fetchRecommendations).toHaveBeenCalledWith('sad', 35, [10, 20], null);
   });
 
   test('renders movies and hides spinner on successful fetch', async function () {

@@ -128,7 +128,7 @@ function rankAndFilter(movies) {
 // Handles POST /recommend -- validates input, checks cache, calls TMDB, ranks results.
 router.post('/', async (req, res) => {
   try {
-    const { mood, genreId, excludeIds } = req.body;
+    const { mood, genreId, excludeIds, decadeRange } = req.body;
 
     if (!mood || typeof mood !== 'string') {
       return res.status(400).json({ error: 'Missing or invalid mood value' });
@@ -140,6 +140,10 @@ router.post('/', async (req, res) => {
 
     if (excludeIds !== undefined && !Array.isArray(excludeIds)) {
       return res.status(400).json({ error: 'excludeIds must be an array' });
+    }
+
+    if (decadeRange !== undefined && decadeRange !== null && (typeof decadeRange !== 'object' || Array.isArray(decadeRange))) {
+      return res.status(400).json({ error: 'decadeRange must be an object' });
     }
 
     const idsToExclude = Array.isArray(excludeIds) ? excludeIds : [];
@@ -168,6 +172,12 @@ router.post('/', async (req, res) => {
 
     if (moodKey === 'excited' && !override) {
       filters['primary_release_date.gte'] = getFourYearsAgo();
+    }
+
+    // Apply the user's explicit decade range, overwriting any existing date filters
+    if (decadeRange) {
+      if (decadeRange.gte) filters['primary_release_date.gte'] = decadeRange.gte;
+      if (decadeRange.lte) filters['primary_release_date.lte'] = decadeRange.lte;
     }
 
     const rawMovies = await discoverMovies(filters);

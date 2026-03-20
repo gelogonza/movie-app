@@ -1,6 +1,18 @@
 // Tracks the user's current mood and genre selections.
 var selectedMood = null;
 var selectedGenreId = null;
+var selectedDecade = null;
+
+// Maps each decade key to its start and end dates for TMDB filtering.
+var DECADE_RANGES = {
+  pre1970s: { gte: '1900-01-01', lte: '1969-12-31' },
+  '1970s': { gte: '1970-01-01', lte: '1979-12-31' },
+  '1980s': { gte: '1980-01-01', lte: '1989-12-31' },
+  '1990s': { gte: '1990-01-01', lte: '1999-12-31' },
+  '2000s': { gte: '2000-01-01', lte: '2009-12-31' },
+  '2010s': { gte: '2010-01-01', lte: '2019-12-31' },
+  '2020s': { gte: '2020-01-01', lte: null }
+};
 
 // Returns the saved watchlist array from localStorage, or an empty array if absent.
 function getWatchlist() {
@@ -567,7 +579,7 @@ async function shuffleResults() {
   grid.innerHTML = '';
   var watchedIds = getWatchedList().map(function (m) { return m.id; });
   try {
-    var response = await window.fetchRecommendations(selectedMood, selectedGenreId, watchedIds);
+    var response = await window.fetchRecommendations(selectedMood, selectedGenreId, watchedIds, selectedDecade);
     renderMovies(response.results);
     spinner.classList.add('hidden');
     var warning = document.getElementById('watched-pool-warning');
@@ -584,6 +596,116 @@ async function shuffleResults() {
     }
   } catch (err) {
     spinner.classList.add('hidden');
+    var errorCard = document.createElement('div');
+    errorCard.className = 'movie-card';
+    errorCard.textContent = 'Something went wrong. Please try again.';
+    grid.appendChild(errorCard);
+  }
+}
+
+// Re-fetches results filtered to the selected decade or clears the filter if toggled off.
+async function handleDecadeFilter(decadeKey) {
+  var allBtns = document.querySelectorAll('.decade-btn');
+  if (selectedDecade === DECADE_RANGES[decadeKey]) {
+    selectedDecade = null;
+    for (var i = 0; i < allBtns.length; i++) allBtns[i].classList.remove('decade-btn--active');
+  } else {
+    selectedDecade = DECADE_RANGES[decadeKey];
+    for (var i = 0; i < allBtns.length; i++) allBtns[i].classList.remove('decade-btn--active');
+    var clicked = document.querySelector('.decade-btn[data-decade="' + decadeKey + '"]');
+    if (clicked) clicked.classList.add('decade-btn--active');
+  }
+
+  var spinner = document.getElementById('loading-spinner');
+  spinner.classList.remove('hidden');
+  var grid = document.getElementById('movie-grid');
+  grid.innerHTML = '';
+
+  try {
+    var watchedIds = getWatchedList().map(function (m) { return m.id; });
+    var response = await window.fetchRecommendations(selectedMood, selectedGenreId, watchedIds, selectedDecade);
+    renderMovies(response.results);
+    spinner.classList.add('hidden');
+    var warning = document.getElementById('watched-pool-warning');
+    if (response.poolSizeAfterExclusion < 15) {
+      if (!warning) {
+        warning = document.createElement('div');
+        warning.id = 'watched-pool-warning';
+        warning.className = 'watched-pool-warning';
+        document.getElementById('results-section').insertBefore(warning, document.getElementById('shuffle-btn'));
+      }
+      warning.textContent = 'You have seen most of our picks for this combination. Try a different genre for more variety.';
+    } else if (warning) {
+      warning.textContent = '';
+    }
+  } catch (err) {
+    spinner.classList.add('hidden');
+    grid.innerHTML = '';
+    var errorCard = document.createElement('div');
+    errorCard.className = 'movie-card';
+    errorCard.textContent = 'Something went wrong. Please try again.';
+    grid.appendChild(errorCard);
+  }
+}
+
+// Updates the page URL with mood and genre query parameters without reloading.
+function updatePageURL(mood, genreId) {
+  var params = new URLSearchParams();
+  params.set('mood', mood);
+  params.set('genreId', genreId);
+  window.history.replaceState(null, '', '?' + params.toString());
+}
+
+// Loads results directly from URL query parameters if mood and genreId are present.
+async function loadFromURL() {
+  var params = new URLSearchParams(window.location.search);
+  var mood = params.get('mood');
+  var genreId = params.get('genreId');
+
+  if (!mood || !genreId) return;
+
+  var validMoods = ['happy', 'sad', 'excited', 'anxious', 'romantic', 'bored'];
+  if (validMoods.indexOf(mood) === -1) return;
+
+  var parsedGenreId = parseInt(genreId, 10);
+  if (isNaN(parsedGenreId) || parsedGenreId <= 0) return;
+
+  var genreNames = {
+    28: 'Action', 35: 'Comedy', 18: 'Drama', 27: 'Horror',
+    10749: 'Romance', 878: 'Sci-Fi', 14: 'Fantasy', 16: 'Animation',
+    99: 'Documentary', 80: 'Crime', 53: 'Thriller', 10752: 'War'
+  };
+
+  selectedMood = mood;
+  selectedGenreId = parsedGenreId;
+  showScreen('results-section');
+  document.getElementById('results-summary').textContent =
+    capitalize(selectedMood) + ' - ' + (genreNames[parsedGenreId] || 'Unknown');
+
+  var spinner = document.getElementById('loading-spinner');
+  spinner.classList.remove('hidden');
+
+  try {
+    var watchedIds = getWatchedList().map(function (m) { return m.id; });
+    var response = await window.fetchRecommendations(selectedMood, selectedGenreId, watchedIds, null);
+    renderMovies(response.results);
+    spinner.classList.add('hidden');
+    var warning = document.getElementById('watched-pool-warning');
+    if (response.poolSizeAfterExclusion < 15) {
+      if (!warning) {
+        warning = document.createElement('div');
+        warning.id = 'watched-pool-warning';
+        warning.className = 'watched-pool-warning';
+        document.getElementById('results-section').insertBefore(warning, document.getElementById('shuffle-btn'));
+      }
+      warning.textContent = 'You have seen most of our picks for this combination. Try a different genre for more variety.';
+    } else if (warning) {
+      warning.textContent = '';
+    }
+  } catch (err) {
+    spinner.classList.add('hidden');
+    var grid = document.getElementById('movie-grid');
+    grid.innerHTML = '';
     var errorCard = document.createElement('div');
     errorCard.className = 'movie-card';
     errorCard.textContent = 'Something went wrong. Please try again.';
@@ -623,9 +745,13 @@ document.addEventListener('DOMContentLoaded', function () {
   for (var j = 0; j < genrePills.length; j++) {
     genrePills[j].addEventListener('click', async function () {
       selectedGenreId = Number(this.getAttribute('data-genre-id'));
+      selectedDecade = null;
+      var decadeBtns = document.querySelectorAll('.decade-btn');
+      for (var d = 0; d < decadeBtns.length; d++) decadeBtns[d].classList.remove('decade-btn--active');
       showScreen('results-section');
       document.getElementById('results-summary').textContent =
         capitalize(selectedMood) + ' - ' + this.textContent;
+      updatePageURL(selectedMood, selectedGenreId);
 
       var spinner = document.getElementById('loading-spinner');
       spinner.classList.remove('hidden');
@@ -635,7 +761,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
       try {
         var watchedIds = getWatchedList().map(function (m) { return m.id; });
-        var response = await window.fetchRecommendations(selectedMood, selectedGenreId, watchedIds);
+        var response = await window.fetchRecommendations(selectedMood, selectedGenreId, watchedIds, selectedDecade);
         var results = response.results;
         var poolSizeAfterExclusion = response.poolSizeAfterExclusion;
         renderMovies(results);
@@ -667,8 +793,12 @@ document.addEventListener('DOMContentLoaded', function () {
   document.getElementById('back-to-mood').addEventListener('click', function () {
     selectedMood = null;
     selectedGenreId = null;
+    selectedDecade = null;
+    var decadeBtns = document.querySelectorAll('.decade-btn');
+    for (var d = 0; d < decadeBtns.length; d++) decadeBtns[d].classList.remove('decade-btn--active');
     var warning = document.getElementById('watched-pool-warning');
     if (warning) warning.textContent = '';
+    window.history.replaceState(null, '', window.location.pathname);
     showScreen('mood-section');
   });
 
@@ -676,8 +806,12 @@ document.addEventListener('DOMContentLoaded', function () {
   document.getElementById('start-over').addEventListener('click', function () {
     selectedMood = null;
     selectedGenreId = null;
+    selectedDecade = null;
+    var decadeBtns = document.querySelectorAll('.decade-btn');
+    for (var d = 0; d < decadeBtns.length; d++) decadeBtns[d].classList.remove('decade-btn--active');
     var warning = document.getElementById('watched-pool-warning');
     if (warning) warning.textContent = '';
+    window.history.replaceState(null, '', window.location.pathname);
     showScreen('mood-section');
   });
 
@@ -758,7 +892,41 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   });
 
+  var decadeButtons = document.querySelectorAll('.decade-btn');
+  for (var d = 0; d < decadeButtons.length; d++) {
+    (function (btn) {
+      btn.addEventListener('click', function () {
+        handleDecadeFilter(btn.getAttribute('data-decade'));
+      });
+    })(decadeButtons[d]);
+  }
+
+  document.getElementById('copy-link-btn').addEventListener('click', function () {
+    var btn = document.getElementById('copy-link-btn');
+    try {
+      navigator.clipboard.writeText(window.location.href).then(function () {
+        btn.textContent = 'Copied';
+        btn.classList.add('copied');
+        setTimeout(function () {
+          btn.textContent = 'Copy link';
+          btn.classList.remove('copied');
+        }, 2000);
+      }).catch(function () {
+        btn.textContent = 'Copy failed';
+        setTimeout(function () {
+          btn.textContent = 'Copy link';
+        }, 2000);
+      });
+    } catch (e) {
+      btn.textContent = 'Copy failed';
+      setTimeout(function () {
+        btn.textContent = 'Copy link';
+      }, 2000);
+    }
+  });
+
   updateWatchlistCount();
   updateWatchedCount();
   showScreen('mood-section');
+  loadFromURL();
 });
