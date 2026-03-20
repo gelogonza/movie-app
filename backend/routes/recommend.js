@@ -45,6 +45,45 @@ const MOOD_FILTERS = {
   },
 };
 
+// Combination-specific overrides that completely replace the base mood filters
+// when a particular mood and genre are paired together.
+const MOOD_GENRE_OVERRIDES = {
+  // Happy + Horror: raise vote floor for beloved crowd-pleasers, cap rating to avoid bleak prestige horror, sort by rating for the fun sweet spot
+  happy: {
+    27: {
+      sort_by: 'vote_average.desc',
+      'vote_average.gte': 6.0,
+      'vote_average.lte': 7.8,
+      'vote_count.gte': 800,
+    },
+  },
+  // Excited + Drama: drop recency filter, raise rating and vote floors to surface landmark high-energy prestige dramas
+  excited: {
+    18: {
+      sort_by: 'vote_average.desc',
+      'vote_average.gte': 7.5,
+      'vote_count.gte': 400,
+    },
+  },
+  // Bored + Horror: high vote count for well-known films, rating sort to surface cult classics and genre-defining horror
+  bored: {
+    27: {
+      sort_by: 'vote_average.desc',
+      'vote_average.gte': 7.0,
+      'vote_count.gte': 600,
+    },
+  },
+  // Romantic + Action: popularity sort for fun accessible films, runtime cap to avoid heavy long action epics, vote floor for quality
+  romantic: {
+    28: {
+      sort_by: 'popularity.desc',
+      'vote_average.gte': 6.5,
+      'vote_count.gte': 400,
+      'with_runtime.lte': 130,
+    },
+  },
+};
+
 // In-memory cache using a Map. Key is "mood-genreId", value is { data, cachedAt }.
 const cache = new Map();
 const CACHE_TTL = 30 * 60 * 1000;
@@ -121,9 +160,13 @@ router.post('/', async (req, res) => {
     //   return res.json(cached);
     // }
 
-    const filters = { ...moodFilter, with_genres: genreId };
+    // Use a mood+genre override if one exists, otherwise fall back to the base mood filter
+    const override = MOOD_GENRE_OVERRIDES[moodKey] && MOOD_GENRE_OVERRIDES[moodKey][genreId];
+    const filters = override
+      ? { ...override, with_genres: genreId }
+      : { ...moodFilter, with_genres: genreId };
 
-    if (moodKey === 'excited') {
+    if (moodKey === 'excited' && !override) {
       filters['primary_release_date.gte'] = getFourYearsAgo();
     }
 
@@ -174,6 +217,7 @@ router._testExports = {
   setCache,
   getFourYearsAgo,
   MOOD_FILTERS,
+  MOOD_GENRE_OVERRIDES,
   cache,
   CACHE_TTL,
 };
