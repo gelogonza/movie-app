@@ -1,6 +1,6 @@
 # MovieRecs
 
-Live demo: [https://movie-app-movierecs.vercel.app](https://movie-app-movierecs.vercel.app)
+Live demo: [https://movie-app-nu-hazel.vercel.app/](https://movie-app-nu-hazel.vercel.app/)
 
 A mood-based movie recommendation web app. You pick how you are feeling, pick a genre, and get a personalised list of 10 movies to watch — no account, no sign-up, no algorithm tracking you.
 
