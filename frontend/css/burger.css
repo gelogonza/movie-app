@@ -1,0 +1,134 @@
+/* ── Burger button ────────────────────────────────────────── */
+#nav-burger {
+  display: none;
+  position: absolute;
+  right: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0.5rem;
+  width: 36px;
+  height: 36px;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 1001;
+}
+
+/* ── Burger lines ────────────────────────────────────────── */
+.burger-line {
+  display: block;
+  width: 22px;
+  height: 2px;
+  background: #ffffff;
+  border-radius: 2px;
+  transition: transform 250ms ease, opacity 250ms ease;
+}
+
+/* ── Burger open state (X shape) ─────────────────────────── */
+#nav-burger.open .burger-line:nth-child(1) {
+  transform: rotate(45deg) translate(5px, 5px);
+}
+
+#nav-burger.open .burger-line:nth-child(2) {
+  opacity: 0;
+}
+
+#nav-burger.open .burger-line:nth-child(3) {
+  transform: rotate(-45deg) translate(5px, -5px);
+}
+
+/* ── Dropdown menu ───────────────────────────────────────── */
+.nav-dropdown {
+  display: none;
+  position: fixed;
+  top: 60px;
+  left: 0;
+  right: 0;
+  width: 100%;
+  background: rgba(21, 23, 61, 0.98);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  flex-direction: column;
+  gap: 0;
+  z-index: 999;
+  transform: translateY(-100%);
+  opacity: 0;
+  pointer-events: none;
+  transition: transform 250ms ease, opacity 250ms ease;
+}
+
+.nav-dropdown.open {
+  transform: translateY(0);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* ── Dropdown buttons ────────────────────────────────────── */
+#nav-watchlist-btn,
+#nav-watched-btn {
+  width: 100%;
+  padding: 1rem 1.5rem;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+  font-family: 'Outfit', sans-serif;
+  font-size: 1rem;
+  text-align: left;
+  cursor: pointer;
+  transition: background 150ms ease;
+}
+
+#nav-watchlist-btn:hover,
+#nav-watched-btn:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+#nav-watchlist-btn:active,
+#nav-watched-btn:active {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* ── Mobile: show burger, hide desktop buttons ───────────── */
+@media (max-width: 480px) {
+  #nav-burger {
+    display: flex;
+  }
+
+  .nav-dropdown {
+    display: flex;
+  }
+
+  #watchlist-toggle,
+  #watched-toggle {
+    display: none;
+  }
+}
+
+/* ── Desktop: always hide burger and dropdown ────────────── */
+@media (min-width: 481px) {
+  .nav-dropdown {
+    display: none !important;
+  }
+
+  #nav-burger {
+    display: none !important;
+  }
+}
+
+/* ── Reduced motion ──────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .burger-line {
+    transition: none;
+  }
+
+  .nav-dropdown {
+    transition: none;
+  }
+
+  #nav-burger {
+    transition: none;
+  }
+}

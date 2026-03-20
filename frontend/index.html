@@ -8,10 +8,11 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@100..900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/cards.css">
-    <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/watchlist.css">
     <link rel="stylesheet" href="css/watched.css">
     <link rel="stylesheet" href="css/modal.css">
+    <link rel="stylesheet" href="css/burger.css">
+    <link rel="stylesheet" href="css/style.css">
     <style>
       .streaming-providers {
         display: flex;
@@ -38,7 +39,16 @@
         <span class="logo">MovieRecs</span>
         <button id="watchlist-toggle">Watchlist<span class="watchlist-count hidden"></span></button>
         <button id="watched-toggle">Watched<span class="watched-count hidden"></span></button>
+        <button id="nav-burger" aria-label="Open menu" aria-expanded="false" aria-controls="nav-dropdown">
+            <span class="burger-line"></span>
+            <span class="burger-line"></span>
+            <span class="burger-line"></span>
+        </button>
         </nav>
+    <div id="nav-dropdown" class="nav-dropdown">
+        <button id="nav-watchlist-btn">Watchlist</button>
+        <button id="nav-watched-btn">Watched</button>
+    </div>
 
     <div id="watchlist-panel" class="watchlist-panel">
       <div class="watchlist-header">

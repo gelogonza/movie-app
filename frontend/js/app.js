@@ -558,6 +558,22 @@ function populateModal(movie) {
   }
 }
 
+// Toggles the mobile burger menu dropdown open or closed.
+function toggleBurgerMenu(forceClose) {
+  var burger = document.getElementById('nav-burger');
+  var dropdown = document.getElementById('nav-dropdown');
+  if (forceClose) {
+    burger.classList.remove('open');
+    dropdown.classList.remove('open');
+    burger.setAttribute('aria-expanded', 'false');
+    return;
+  }
+  burger.classList.toggle('open');
+  dropdown.classList.toggle('open');
+  var isOpen = dropdown.classList.contains('open');
+  burger.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+}
+
 // Wires up all click listeners and shows the initial screen on page load.
 document.addEventListener('DOMContentLoaded', function () {
   var moodButtons = document.querySelectorAll('.mood-card');
@@ -648,8 +664,33 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   });
 
+  document.getElementById('nav-burger').addEventListener('click', function () {
+    toggleBurgerMenu();
+  });
+
+  document.getElementById('nav-watchlist-btn').addEventListener('click', function () {
+    toggleBurgerMenu(true);
+    toggleWatchlistPanel();
+  });
+
+  document.getElementById('nav-watched-btn').addEventListener('click', function () {
+    toggleBurgerMenu(true);
+    toggleWatchedPanel();
+  });
+
+  document.addEventListener('click', function (e) {
+    var dropdown = document.getElementById('nav-dropdown');
+    if (!dropdown.classList.contains('open')) return;
+    if (!e.target.closest('#nav-burger') && !e.target.closest('#nav-dropdown')) {
+      toggleBurgerMenu(true);
+    }
+  });
+
   document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape') {
+      if (document.getElementById('nav-dropdown').classList.contains('open')) {
+        toggleBurgerMenu(true);
+      }
       if (document.getElementById('movie-modal-overlay').classList.contains('active')) {
         closeMovieModal();
       }
