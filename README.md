@@ -15,11 +15,15 @@ MovieRecs walks you through two choices:
 
 Once both are selected, the app queries the TMDB movie database using filters tuned to your mood, scores the results using a custom ranking formula, shuffles the top picks so you get something different each time, and displays up to 10 movie cards with poster, title, rating, year, and overview.
 
-Beyond the core recommendation flow, the app includes three additional features:
+Beyond the core recommendation flow, the app includes several additional features:
 
+- **Movie detail modal** — clicking any movie card opens a full detail modal with a backdrop image, tagline, runtime, genre pills, full overview, director name, top 4 cast members with photos, and an embedded YouTube trailer. The modal fetches rich data from a dedicated `GET /movie/:id` backend endpoint.
 - **Watchlist** — users can save any movie from the results grid by clicking a Save button on the card. Saved movies appear in a slide-out panel accessible from the navbar. The watchlist persists between browser sessions using localStorage.
-- **Watched history** — users can mark any movie as watched. Watched movies are stored in localStorage and sent to the backend with every new recommendation request. The backend filters them out before ranking so the user always receives results they have not seen before.
+- **Watched history** — users can mark any movie as watched. Watched movies are stored in localStorage and sent to the backend with every new recommendation request. The backend filters them out before ranking so the user always receives results they have not seen before. When most movies in a mood/genre pool have been watched, a warning appears suggesting the user try a different genre.
+- **Shuffle** — a Shuffle button on the results screen fetches a fresh set of recommendations for the same mood and genre combination without navigating back.
 - **Streaming availability** — each movie card shows which US streaming services the movie is currently available on as subscription streaming. Service logos are fetched from the TMDB watch providers endpoint and displayed below the movie overview.
+- **Mobile burger menu** — on small screens (480px and below), the Watchlist and Watched navbar buttons collapse into an animated hamburger menu with a slide-down dropdown. The burger icon animates to an X when open, and the menu closes on outside click or Escape key.
+- **Keyboard shortcuts** — pressing Escape closes any open panel, modal, or dropdown.
 
 ---
 
@@ -27,29 +31,41 @@ Beyond the core recommendation flow, the app includes three additional features:
 
 ### Frontend
 
-The frontend is a single HTML page (`frontend/index.html`) with three sections that show and hide one at a time: mood selection, genre selection, and results. There is no framework — just plain HTML, CSS, and two vanilla JavaScript files.
+The frontend is a single HTML page (`frontend/index.html`) with three sections that show and hide one at a time: mood selection, genre selection, and results. There is no framework -- just plain HTML, CSS, and two vanilla JavaScript files.
 
-- `frontend/js/api.js` — handles the `POST /recommend` request to the backend and parses the response
-- `frontend/js/app.js` — manages all screen transitions, click events, and injects movie cards into the DOM using `createElement`
-- `frontend/css/style.css` — layout, buttons, typography, and responsive styles
-- `frontend/css/cards.css` — movie card styles
+- `frontend/js/api.js` -- handles the `POST /recommend` request to the backend and parses the response
+- `frontend/js/app.js` -- manages all screen transitions, click events, movie detail modal, burger menu, watchlist/watched panels, and injects movie cards into the DOM using `createElement`
+- `frontend/css/style.css` -- layout, buttons, typography, responsive breakpoints (mobile and tablet)
+- `frontend/css/cards.css` -- movie card styles
+- `frontend/css/watchlist.css` -- slide-out watchlist panel styles
+- `frontend/css/watched.css` -- slide-out watched history panel styles
+- `frontend/css/modal.css` -- movie detail modal overlay, panel, backdrop, cast, trailer
+- `frontend/css/burger.css` -- mobile hamburger menu button and dropdown
 
 ### Backend
 
-The backend is a Node.js and Express server (`backend/server.js`) that also serves the frontend as static files. It exposes one API endpoint:
+The backend is a Node.js and Express server (`backend/server.js`) that also serves the frontend as static files. It exposes two API endpoints:
 
 ```
 POST /recommend
 Content-Type: application/json
 
-{ "mood": "happy", "genreId": 35 }
+{ "mood": "happy", "genreId": 35, "excludeIds": [550, 680] }
 ```
 
-Returns a JSON array of up to 10 movie objects, each with: `id`, `title`, `overview`, `release_date`, `vote_average`, `vote_count`, `poster_path`, `genre_ids`.
+Returns a JSON object with two fields:
+- `results` -- an array of up to 10 movie objects, each with: `id`, `title`, `overview`, `release_date`, `vote_average`, `vote_count`, `poster_path`, `genre_ids`, and `streamingProviders`
+- `poolSizeAfterExclusion` -- the number of movies remaining after removing already-watched IDs, used by the frontend to show a low-pool warning
+
+```
+GET /movie/:id
+```
+
+Returns a single detailed movie object with: `id`, `title`, `tagline`, `overview`, `runtime` (formatted as "1h 45m"), `backdrop_url`, `poster_url`, `genres`, `vote_average`, `vote_count`, `release_date`, `director`, `cast` (top 4 with name, character, and photo URL), and `trailer_key` (YouTube video ID).
 
 #### Recommendation pipeline
 
-**Step 1 — Mood to TMDB filters**
+**Step 1 -- Mood to TMDB filters**
 
 Each mood maps to a hardcoded set of TMDB `/discover/movie` query parameters that control how movies are sorted and what minimum quality thresholds apply:
 
@@ -62,11 +78,22 @@ Each mood maps to a hardcoded set of TMDB `/discover/movie` query parameters tha
 | Romantic | Rating | 6.5 | 150 | — |
 | Bored | Popularity | 6.0 | 500 | — |
 
-**Step 2 — Parallel TMDB fetch**
+**Step 1b -- Mood-genre overrides**
 
-The genre ID is merged with the mood filters and sent to TMDB. Pages 1 and 2 are fetched at the same time using `Promise.all`, giving a raw pool of up to 40 movies. Any duplicates across the two pages are removed by movie ID.
+Certain mood and genre pairings have combination-specific filter overrides that completely replace the base mood filters. These are tuned to produce better results when the default mood filters clash with the genre:
 
-**Step 3 — Scoring and ranking**
+| Mood + Genre | Override behaviour |
+|---|---|
+| Happy + Horror | Rating sort, caps max rating at 7.8 and raises vote floor to 800 to surface fun crowd-pleaser horror instead of bleak prestige picks |
+| Excited + Drama | Drops the recency filter, raises rating to 7.5 and votes to 400 to surface landmark high-energy prestige dramas |
+| Bored + Horror | Rating sort, raises vote floor to 600 and minimum rating to 7.0 to surface cult classics and genre-defining horror |
+| Romantic + Action | Popularity sort with a 130-minute runtime cap and 400-vote floor to avoid heavy long action epics |
+
+**Step 2 -- Parallel TMDB fetch**
+
+The genre ID is merged with the mood filters (or override, if one exists) and sent to TMDB. Pages 1 and 2 are fetched at the same time using `Promise.all`, giving a raw pool of up to 40 movies. Any duplicates across the two pages are removed by movie ID.
+
+**Step 3 -- Scoring and ranking**
 
 Every movie that has at least 100 votes is scored using:
 
@@ -76,13 +103,17 @@ score = (vote_average × 0.7) + (log10(vote_count) × 0.3)
 
 The 70/30 split balances critical quality with audience reach. The logarithmic scale on vote count prevents blockbusters with millions of votes from completely dominating critically acclaimed films with smaller audiences.
 
-**Step 4 — Shuffle for variety**
+**Step 4 -- Shuffle for variety**
 
 After sorting by score, the top 25 results are taken and shuffled using a Fisher-Yates shuffle. The first 10 from the shuffled pool are returned. This means every request for the same mood and genre combination will return a high-quality but varied set — repeating the same selection will show you different films.
 
-**Step 5 — Watched movie exclusion**
+**Step 5 -- Watched movie exclusion**
 
-The frontend sends an optional `excludeIds` array in the request body containing the numeric IDs of all movies the user has previously marked as watched. Before `rankAndFilter` runs, any movie whose ID appears in `excludeIds` is removed from the pool. This ensures the ranked and shuffled results only contain movies the user has not already seen.
+The frontend sends an optional `excludeIds` array in the request body containing the numeric IDs of all movies the user has previously marked as watched. Before `rankAndFilter` runs, any movie whose ID appears in `excludeIds` is removed from the pool. This ensures the ranked and shuffled results only contain movies the user has not already seen. The number of movies remaining after exclusion (`poolSizeAfterExclusion`) is returned alongside the results so the frontend can warn users when the pool is running low.
+
+**Step 6 -- Streaming provider lookup**
+
+After ranking, the backend fetches US flatrate streaming availability for each of the 10 result movies in parallel using the TMDB watch providers endpoint. Each movie in the response includes a `streamingProviders` array with provider name and logo URL. If any provider lookup fails, that movie gets an empty array rather than blocking the entire response.
 
 ---
 
@@ -92,24 +123,37 @@ The frontend sends an optional `excludeIds` array in the request body containing
 movie-app/
 ├── backend/
 │   ├── __tests__/
-│   │   ├── recommend.test.js   # Tests for rankAndFilter
-│   │   ├── tmdb.test.js        # Tests for discoverMovies and formatMovie
-│   │   └── server.test.js      # Tests for Express routes and middleware
+│   │   ├── excludeIds.test.js          # Watched-ID exclusion logic
+│   │   ├── fetchRecommendations.test.js # Client-side fetch wrapper
+│   │   ├── mood-genre-overrides.test.js # Combination-specific filter overrides
+│   │   ├── movie.test.js               # GET /movie/:id route
+│   │   ├── recommend.test.js           # rankAndFilter scoring and shuffle
+│   │   ├── response-shape.test.js      # POST /recommend response structure
+│   │   ├── server.test.js              # Express health check, CORS, 404
+│   │   ├── shuffle-warning.test.js     # Low-pool warning threshold
+│   │   ├── streaming-render.test.js    # Streaming provider UI rendering
+│   │   ├── streaming-route.test.js     # Streaming data in recommend route
+│   │   ├── streaming.test.js           # getWatchProviders unit tests
+│   │   ├── tmdb.test.js               # discoverMovies and formatMovie
+│   │   └── watched.test.js            # Watched history persistence
 │   ├── routes/
+│   │   ├── movie.js            # GET /movie/:id handler (detail, credits, trailer)
 │   │   ├── recommend.js        # POST /recommend handler and ranking logic
-│   │   └── tmdb.js             # TMDB API calls, movie formatting, and getWatchProviders
+│   │   └── tmdb.js             # TMDB API calls, formatting, providers, movie details
 │   ├── .env                    # Environment variables (not committed)
 │   ├── package.json
 │   └── server.js               # Express app entry point
 ├── frontend/
 │   ├── css/
+│   │   ├── burger.css          # Mobile hamburger menu and dropdown
 │   │   ├── cards.css           # Movie card styles
-│   │   ├── style.css           # Global layout and button styles
-│   │   ├── watchlist.css       # Slide-out watchlist panel styles
-│   │   └── watched.css         # Slide-out watched history panel styles
+│   │   ├── modal.css           # Movie detail modal overlay and panel
+│   │   ├── style.css           # Global layout, buttons, responsive breakpoints
+│   │   ├── watched.css         # Slide-out watched history panel styles
+│   │   └── watchlist.css       # Slide-out watchlist panel styles
 │   ├── js/
 │   │   ├── api.js              # Fetch wrapper for POST /recommend (accepts excludeIds)
-│   │   └── app.js              # UI logic and DOM manipulation
+│   │   └── app.js              # UI logic, DOM manipulation, modal, burger menu
 │   └── index.html              # Single-page app shell
 ├── .gitignore
 └── README.md
@@ -175,11 +219,21 @@ cd backend
 npm test
 ```
 
-This runs all three test suites with verbose output:
+This runs all 13 test suites with verbose output:
 
-- `tmdb.test.js` — covers `formatMovie` (field shaping, poster URL construction, null handling) and `discoverMovies` (parallel fetching, page merging, deduplication, error handling)
-- `recommend.test.js` — covers `rankAndFilter` (vote count filtering, scoring, top-25 pool selection, Fisher-Yates shuffle, `_score` field removal)
-- `server.test.js` — covers the Express app health check, CORS headers, JSON parsing, and 404 handling
+- `tmdb.test.js` -- `formatMovie` (field shaping, poster URL, null handling) and `discoverMovies` (parallel fetch, deduplication, errors)
+- `recommend.test.js` -- `rankAndFilter` (vote filtering, scoring, top-25 pool, Fisher-Yates shuffle, `_score` removal)
+- `server.test.js` -- Express health check, CORS headers, JSON parsing, 404 handling
+- `movie.test.js` -- `GET /movie/:id` route (detail response shape, invalid ID handling, TMDB errors)
+- `excludeIds.test.js` -- watched-ID exclusion from the recommendation pool
+- `fetchRecommendations.test.js` -- client-side fetch wrapper (request body, error handling)
+- `mood-genre-overrides.test.js` -- combination-specific filter overrides replace base mood filters
+- `response-shape.test.js` -- `POST /recommend` returns `{ results, poolSizeAfterExclusion }`
+- `shuffle-warning.test.js` -- low-pool threshold triggers frontend warning
+- `streaming.test.js` -- `getWatchProviders` unit tests (US flatrate parsing, fallback on error)
+- `streaming-route.test.js` -- streaming provider data attached in `POST /recommend` response
+- `streaming-render.test.js` -- streaming provider logos rendered on movie cards
+- `watched.test.js` -- watched history localStorage persistence and UI sync
 
 ---
 
@@ -200,7 +254,7 @@ The `.env` file must be placed inside the `backend/` directory. It is excluded f
 |---|---|
 | Frontend | HTML, CSS, vanilla JavaScript |
 | Backend | Node.js, Express |
-| Movie data | TMDB API (v3 `/discover/movie`) |
+| Movie data | TMDB API (v3 `/discover/movie`, `/movie/:id`, `/movie/:id/credits`, `/movie/:id/videos`, `/movie/:id/watch/providers`) |
 | HTTP client | Axios |
 | Testing | Jest, Supertest |
 | Deployment | DigitalOcean App Platform (backend), Vercel (frontend) |
